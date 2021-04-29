@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -14,7 +13,7 @@ type Game struct{}
 const (
 	screenWidth  = 700
 	screenHeight = 700
-	maxIter      = 500
+	maxIter      = 1000
 )
 
 var (
@@ -24,27 +23,10 @@ var (
 	xMouse  int
 	yMouse  int
 
-	xMin = -1.5
-	xMax = 0.5
-	yMin = -1.0
-	yMax = 1.0
+	zoom = 2.0
 
 	mousePressed = false
 )
-
-func setBounds(x, y int) {
-	xLen := float64(xMax-xMin) / 4.0
-	yLen := float64(yMax-yMin) / 4.0
-	xStep := float64(xMax-xMin) / screenWidth
-	yStep := float64(yMax-yMin) / screenHeight
-	xTrue := xMin + float64(x)*xStep
-	yTrue := yMin + float64(y)*yStep
-
-	xMin = xTrue - xLen
-	xMax = xTrue + xLen
-	yMin = yTrue - yLen
-	yMax = yTrue + yLen
-}
 
 func (g *Game) Update() error {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
@@ -64,48 +46,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
-}
-
-func generatePixel(x, y float64) int {
-	z := complex(0, 0)
-	c := complex(x, y)
-	it := 0
-	for ; it < maxIter; it++ {
-		z = z*z + c
-		if real(z)*real(z)+imag(z)*imag(z) > 4 {
-			break
-		}
-	}
-	return it
-}
-
-func color(it int) (r, g, b byte) {
-	if it == maxIter {
-		return 0xff, 0xff, 0xff
-	}
-	c := palette[it]
-	return c, c, c
-}
-
-func generateImage() {
-	fmt.Println("Generating image")
-	start := time.Now()
-	xStep := float64(xMax-xMin) / screenWidth
-	yStep := float64(yMax-yMin) / screenHeight
-	for i := 0; i < screenHeight; i++ {
-		for j := 0; j < screenWidth; j++ {
-			value := generatePixel(xMin+xStep*float64(j), yMin+yStep*float64(i))
-			r, g, b := color(value)
-			currentPixel := (i*screenWidth + j) * 4
-			imgPix[currentPixel] = r
-			imgPix[currentPixel+1] = g
-			imgPix[currentPixel+2] = b
-			imgPix[currentPixel+3] = 0xff
-		}
-	}
-	duration := time.Since(start)
-	fmt.Println("[Finished in", duration, "]")
-	img.ReplacePixels(imgPix)
 }
 
 func initialize() {
