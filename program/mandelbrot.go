@@ -2,7 +2,12 @@ package program
 
 import (
 	"fmt"
+	"sync"
 	"time"
+)
+
+const (
+	numProcesses = 10
 )
 
 var (
@@ -35,22 +40,45 @@ func setBounds(x, y int) {
 func generateImage() {
 	fmt.Println("Generating image")
 	start := time.Now()
-	xStep := float64(xMax-xMin) / screenWidth
-	yStep := float64(yMax-yMin) / screenHeight
-	for i := 0; i < screenHeight; i++ {
-		for j := 0; j < screenWidth; j++ {
-			value := generatePixel(xMin+xStep*float64(j), yMin+yStep*float64(i))
-			r, g, b := color(value)
-			currentPixel := (i*screenWidth + j) * 4
-			imgPix[currentPixel] = r
-			imgPix[currentPixel+1] = g
-			imgPix[currentPixel+2] = b
-			imgPix[currentPixel+3] = 0xff
-		}
+	//Parallel
+	var wg sync.WaitGroup
+	out := make(chan Pixel)
+	deltax := screenWidth / numProcesses
+	for p := 0; p < numProcesses; p++ {
+		procStart := p * deltax
+		wg.Add(1)
+		go func(pStart int) {
+			defer wg.Done()
+			generateSubImage(pStart, deltax, out)
+		}(procStart)
+	}
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+
+	for px := range out {
+		currentPixel := (px.y*screenWidth + px.x) * 4
+		r, g, b := color(px.iter)
+		imgPix[currentPixel] = r
+		imgPix[currentPixel+1] = g
+		imgPix[currentPixel+2] = b
+		imgPix[currentPixel+3] = 0xff
 	}
 	duration := time.Since(start)
 	fmt.Println("[Finished in", duration, "]")
 	img.ReplacePixels(imgPix)
+}
+
+func generateSubImage(start, len int, out chan Pixel) {
+	xStep := float64(xMax-xMin) / screenWidth
+	yStep := float64(yMax-yMin) / screenHeight
+	for i := 0; i < screenHeight; i++ {
+		for j := start; j < start+len; j++ {
+			value := generatePixel(xMin+xStep*float64(j), yMin+yStep*float64(i))
+			out <- Pixel{j, i, value}
+		}
+	}
 }
 
 func color(it int) (r, g, b byte) {
