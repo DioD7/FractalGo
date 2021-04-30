@@ -3,8 +3,8 @@ package program
 import (
 	"fmt"
 	"log"
-	"math"
 
+	"github.com/DioD7/fractal/color"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -17,11 +17,10 @@ const (
 )
 
 var (
-	img     = ebiten.NewImage(screenWidth, screenHeight)
-	imgPix  []byte
-	palette [maxIter]byte
-	xMouse  int
-	yMouse  int
+	img    = ebiten.NewImage(screenWidth, screenHeight)
+	imgPix []byte
+	xMouse int
+	yMouse int
 
 	zoom = 2.0
 
@@ -51,9 +50,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func initialize() {
 	fmt.Println("Initilaizing")
 	imgPix = make([]byte, 4*screenWidth*screenHeight)
-	for i := range palette {
-		palette[i] = byte(math.Sqrt(float64(i)/float64(len(palette))) * maxIter)
-	}
+	color.SetPalette([]color.Color{color.BLACK, color.BLUE, color.GREEN, color.PURPLE, color.WHITE})
+
 	generateImage()
 }
 

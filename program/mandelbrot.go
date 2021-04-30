@@ -2,8 +2,11 @@ package program
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"time"
+
+	"github.com/DioD7/fractal/color"
 )
 
 const (
@@ -59,7 +62,7 @@ func generateImage() {
 
 	for px := range out {
 		currentPixel := (px.y*screenWidth + px.x) * 4
-		r, g, b := color(px.iter)
+		r, g, b := getColor(px.iter)
 		imgPix[currentPixel] = r
 		imgPix[currentPixel+1] = g
 		imgPix[currentPixel+2] = b
@@ -81,12 +84,10 @@ func generateSubImage(start, len int, out chan Pixel) {
 	}
 }
 
-func color(it int) (r, g, b byte) {
-	if it == maxIter {
-		return 0xff, 0xff, 0xff
-	}
-	c := palette[it]
-	return c, c, c
+func getColor(it int) (r, g, b byte) {
+	t := math.Sqrt(float64(it) / float64(maxIter))
+	c, _ := color.GetColor(t)
+	return byte(c.R), byte(c.G), byte(c.B)
 }
 
 func generatePixel(x, y float64) int {
